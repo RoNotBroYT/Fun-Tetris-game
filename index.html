@@ -75,28 +75,18 @@
     const nextContext = nextCanvas.getContext('2d');
     nextContext.scale(20, 20);
 
-    const blockSize = 20;
-    const rows = 20;
-    const cols = 12;
-
-    function createMatrix(w, h) {
-      const matrix = [];
-      while (h--) matrix.push(new Array(w).fill(0));
-      return matrix;
-    }
-
     const colors = [
       null,
-      '#FF0D72',
-      '#0DC2FF',
-      '#0DFF72',
-      '#F538FF',
-      '#FF8E0D',
-      '#FFE138',
-      '#3877FF',
+      '#ff0d72', // T
+      '#0dc2ff', // O
+      '#0dff72', // L
+      '#f538ff', // J
+      '#ff8e0d', // I
+      '#ffe138', // S
+      '#3877ff', // Z
     ];
 
-    const arena = createMatrix(cols, rows);
+    const arena = createMatrix(12, 20);
 
     const player = {
       pos: { x: 0, y: 0 },
@@ -107,9 +97,20 @@
 
     let highScore = 0;
 
-    function updateScore() {
-      document.getElementById('score').innerText = player.score;
-      document.getElementById('high').innerText = highScore;
+    function createMatrix(w, h) {
+      const matrix = [];
+      while (h--) matrix.push(new Array(w).fill(0));
+      return matrix;
+    }
+
+    function createPiece(type) {
+      if (type === 'T') return [[0, 1, 0], [1, 1, 1], [0, 0, 0]];
+      if (type === 'O') return [[2, 2], [2, 2]];
+      if (type === 'L') return [[0, 3, 0], [0, 3, 0], [0, 3, 3]];
+      if (type === 'J') return [[0, 4, 0], [0, 4, 0], [4, 4, 0]];
+      if (type === 'I') return [[0, 5, 0, 0], [0, 5, 0, 0], [0, 5, 0, 0], [0, 5, 0, 0]];
+      if (type === 'S') return [[0, 6, 6], [6, 6, 0], [0, 0, 0]];
+      if (type === 'Z') return [[7, 7, 0], [0, 7, 7], [0, 0, 0]];
     }
 
     function drawMatrix(matrix, offset, ctx = context) {
@@ -118,7 +119,7 @@
           if (value !== 0) {
             ctx.fillStyle = colors[value];
             ctx.fillRect(x + offset.x, y + offset.y, 1, 1);
-            ctx.strokeStyle = "#222";
+            ctx.strokeStyle = "#000";
             ctx.strokeRect(x + offset.x, y + offset.y, 1, 1);
           }
         });
@@ -131,7 +132,6 @@
       drawMatrix(arena, { x: 0, y: 0 });
       drawMatrix(player.matrix, player.pos);
 
-      // Draw next piece
       nextContext.fillStyle = '#000';
       nextContext.fillRect(0, 0, nextCanvas.width, nextCanvas.height);
       drawMatrix(player.next, { x: 1, y: 1 }, nextContext);
@@ -197,16 +197,6 @@
       }
     }
 
-    function createPiece(type) {
-      if (type === 'T') return [[0, 1, 0], [1, 1, 1], [0, 0, 0]];
-      if (type === 'O') return [[2, 2], [2, 2]];
-      if (type === 'L') return [[0, 3, 0], [0, 3, 0], [0, 3, 3]];
-      if (type === 'J') return [[0, 4, 0], [0, 4, 0], [4, 4, 0]];
-      if (type === 'I') return [[0, 5, 0, 0], [0, 5, 0, 0], [0, 5, 0, 0], [0, 5, 0, 0]];
-      if (type === 'S') return [[0, 6, 6], [6, 6, 0], [0, 0, 0]];
-      if (type === 'Z') return [[7, 7, 0], [0, 7, 7], [0, 0, 0]];
-    }
-
     function playerDrop() {
       player.pos.y++;
       if (collide(arena, player)) {
@@ -231,7 +221,7 @@
       player.matrix = player.next || createPiece(pieces[Math.floor(Math.random() * pieces.length)]);
       player.next = createPiece(pieces[Math.floor(Math.random() * pieces.length)]);
       player.pos.y = 0;
-      player.pos.x = Math.floor(cols / 2) - Math.floor(player.matrix[0].length / 2);
+      player.pos.x = Math.floor(arena[0].length / 2) - Math.floor(player.matrix[0].length / 2);
       if (collide(arena, player)) {
         highScore = Math.max(highScore, player.score);
         alert("Game Over! Score: " + player.score);
@@ -246,6 +236,11 @@
       player.next = null;
       playerReset();
       updateScore();
+    }
+
+    function updateScore() {
+      document.getElementById('score').innerText = player.score;
+      document.getElementById('high').innerText = highScore;
     }
 
     document.addEventListener('keydown', event => {
@@ -264,9 +259,7 @@
       const deltaTime = time - lastTime;
       lastTime = time;
       dropCounter += deltaTime;
-      if (dropCounter > dropInterval) {
-        playerDrop();
-      }
+      if (dropCounter > dropInterval) playerDrop();
       draw();
       requestAnimationFrame(update);
     }
