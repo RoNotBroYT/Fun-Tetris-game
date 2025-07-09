@@ -1,10 +1,99 @@
-<!DOCTYPE html>
-<html>
-<body style="background:black; color:cyan; font-family:sans-serif; text-align:center; padding:2em;">
-<h1>JS Test on Vercel</h1>
-<div id="out">Waiting...</div>
-<script>
-  document.getElementById('out').textContent = "JavaScript is running!";
-</script>
+<<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Minimal Tetris</title>
+  <style>
+    body {
+      background: black;
+      color: cyan;
+      font-family: monospace, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 0;
+      height: 100vh;
+      justify-content: center;
+    }
+    canvas {
+      background: black;
+      border: 4px solid cyan;
+      image-rendering: pixelated;
+    }
+  </style>
+</head>
+<body>
+  <h1>TETRIS Minimal</h1>
+  <canvas id="tetris" width="240" height="400"></canvas>
+
+  <script>
+    const canvas = document.getElementById('tetris');
+    const ctx = canvas.getContext('2d');
+    ctx.scale(20, 20);
+
+    const colors = [null, '#ff0d72', '#0dc2ff', '#0dff72'];
+
+    const arena = Array.from({ length: 20 }, () => Array(12).fill(0));
+
+    const player = {
+      pos: { x: 4, y: 0 },
+      matrix: [
+        [0, 1, 0],
+        [1, 1, 1],
+        [0, 0, 0],
+      ],
+    };
+
+    function drawMatrix(matrix, offset) {
+      matrix.forEach((row, y) => {
+        row.forEach((value, x) => {
+          if (value !== 0) {
+            ctx.fillStyle = colors[value];
+            ctx.fillRect(x + offset.x, y + offset.y, 1, 1);
+            ctx.strokeStyle = '#000';
+            ctx.strokeRect(x + offset.x, y + offset.y, 1, 1);
+          }
+        });
+      });
+    }
+
+    function draw() {
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      drawMatrix(arena, { x: 0, y: 0 });
+      drawMatrix(player.matrix, player.pos);
+    }
+
+    let dropCounter = 0;
+    let dropInterval = 1000;
+    let lastTime = 0;
+
+    function playerDrop() {
+      player.pos.y++;
+      if (player.pos.y > 16) {
+        player.pos.y = 0;
+      }
+      dropCounter = 0;
+    }
+
+    function update(time = 0) {
+      const deltaTime = time - lastTime;
+      lastTime = time;
+      dropCounter += deltaTime;
+      if (dropCounter > dropInterval) {
+        playerDrop();
+      }
+      draw();
+      requestAnimationFrame(update);
+    }
+
+    document.addEventListener('keydown', e => {
+      if (e.key === 'a' || e.key === 'ArrowLeft') player.pos.x = Math.max(0, player.pos.x - 1);
+      if (e.key === 'd' || e.key === 'ArrowRight') player.pos.x = Math.min(9, player.pos.x + 1);
+      if (e.key === 's' || e.key === 'ArrowDown') playerDrop();
+    });
+
+    update();
+  </script>
 </body>
 </html>
