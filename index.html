@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Fun Tetris</title>
+  <title>Fun Tetris Game</title>
   <style>
     body {
       background: #111;
@@ -20,14 +20,31 @@
       margin: 0 0 10px;
       font-weight: normal;
     }
-    #scoreboard {
-      margin-bottom: 10px;
-      font-size: 1.2em;
+    #topPanel {
       display: flex;
-      gap: 20px;
+      justify-content: space-between;
+      width: 260px; 
+      margin-bottom: 10px;
       user-select: none;
     }
-    canvas {
+    #scoreboard {
+      font-size: 1.2em;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-width: 130px;
+    }
+    #scoreboard div {
+      white-space: nowrap;
+    }
+    #next-piece {
+      border: 4px solid #0ff;
+      background: #000;
+      width: 100px;
+      height: 100px;
+      box-sizing: border-box;
+    }
+    canvas#tetris {
       background: #000;
       border: 4px solid #0ff;
       display: block;
@@ -58,11 +75,17 @@
 </head>
 <body>
   <h1>Fun Tetris Game</h1>
-  <div id="scoreboard">
-    <div id="score">Score: 0</div>
-    <div id="highScore">High Score: 0</div>
+
+  <div id="topPanel">
+    <div id="scoreboard">
+      <div id="score">Score: 0</div>
+      <div id="highScore">High Score: 0</div>
+    </div>
+    <canvas id="next-piece" width="100" height="100"></canvas>
   </div>
+
   <canvas id="tetris" width="240" height="400"></canvas>
+  
   <div id="controls">
     <button id="left">←</button>
     <button id="rotate">⤾</button>
@@ -74,6 +97,9 @@
   <script>
     const canvas = document.getElementById('tetris');
     const context = canvas.getContext('2d');
+
+    const nextCanvas = document.getElementById('next-piece');
+    const nextCtx = nextCanvas.getContext('2d');
 
     const blockSize = 20;
     const rows = 20;
@@ -103,24 +129,26 @@
     const player = {
       pos: { x: 0, y: 0 },
       matrix: null,
-      score: 0
+      score: 0,
+      next: null,
     };
 
     let highScore = localStorage.getItem('tetrisHighScore') || 0;
     highScore = parseInt(highScore);
 
-    function drawMatrix(matrix, offset) {
+    function drawMatrix(matrix, offset, ctx = context, scale = blockSize) {
       matrix.forEach((row, y) => {
         row.forEach((value, x) => {
           if (value !== 0) {
-            context.fillStyle = colors[value];
-            context.fillRect((x + offset.x) * blockSize,
-                             (y + offset.y) * blockSize,
-                             blockSize, blockSize);
-            context.strokeStyle = "#222";
-            context.strokeRect((x + offset.x) * blockSize,
-                               (y + offset.y) * blockSize,
-                               blockSize, blockSize);
+            ctx.fillStyle = colors[value];
+            ctx.fillRect((x + offset.x) * scale,
+                         (y + offset.y) * scale,
+                         scale, scale);
+            ctx.strokeStyle = "#222";
+            ctx.lineWidth = 2;
+            ctx.strokeRect((x + offset.x) * scale,
+                           (y + offset.y) * scale,
+                           scale, scale);
           }
         });
       });
@@ -131,6 +159,27 @@
       context.fillRect(0, 0, canvas.width, canvas.height);
       drawMatrix(arena, {x: 0, y: 0});
       drawMatrix(player.matrix, player.pos);
+      drawNext();
+    }
+
+    function drawNext() {
+      nextCtx.fillStyle = '#000';
+      nextCtx.fillRect(0, 0, nextCanvas.width, nextCanvas.height);
+
+      if (!player.next) return;
+
+      
+      const previewSize = 100;
+      const padding = 10;
+      const matrix = player.next;
+      const maxDim = Math.max(matrix.length, matrix[0].length);
+      const scale = (previewSize - padding * 2) / maxDim;
+
+      
+      const offsetX = Math.floor((previewSize / scale - matrix[0].length) / 2);
+      const offsetY = Math.floor((previewSize / scale - matrix.length) / 2);
+
+      drawMatrix(matrix, { x: offsetX, y: offsetY }, nextCtx, scale);
     }
 
     function merge(arena, player) {
@@ -230,8 +279,11 @@
     }
 
     function playerReset() {
+      
+      player.matrix = player.next || createPiece('T'); 
+      
       const pieces = 'TJLOSZI';
-      player.matrix = createPiece(pieces[Math.floor(Math.random() * pieces.length)]);
+      player.next = createPiece(pieces[Math.floor(Math.random() * pieces.length)]);
       player.pos.y = 0;
       player.pos.x = Math.floor(cols / 2) - Math.floor(player.matrix[0].length / 2);
       if (collide(arena, player)) {
@@ -253,6 +305,7 @@
       arena.forEach(row => row.fill(0));
       player.score = 0;
       updateScore();
+      player.next = null;
       playerReset();
     }
 
